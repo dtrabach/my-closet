@@ -1,0 +1,673 @@
+<!-- Guarda-Roupa — catálogo pessoal de roupas -->
+<style>
+  :root{
+    --bg: #EAE5DC;
+    --surface: #FFFFFF;
+    --ink: #2A2620;
+    --ink-soft: #6B6558;
+    --line: #D8D0C2;
+    --accent: #4A5A46;
+    --accent-soft: #DCE3D6;
+    --calor: #C9832E;
+    --calor-bg: #F6E7D2;
+    --frio: #3E6480;
+    --frio-bg: #DCE7EC;
+    --ambos-bg: #EAE2EF;
+    --ambos: #6B5580;
+    --danger: #A6473A;
+    --radius: 3px;
+    --font-display: 'Fraunces', Georgia, serif;
+    --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; }
+  .app{ background: var(--bg); color: var(--ink); font-family: var(--font-body); min-height: 100vh; padding: 18px 14px 60px; }
+  .header{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom: 14px; gap: 8px; }
+  .header h1{ font-family: var(--font-display); font-weight: 600; font-size: 26px; margin: 0; letter-spacing: -0.01em; }
+  .header .sub{ font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.08em; }
+  .header-actions{ display:flex; gap: 8px; flex-shrink:0; }
+  .icon-btn{ background: var(--surface); border: 1px solid var(--line); color: var(--ink); width: 38px; height: 38px; border-radius: 50%; font-size: 15px; cursor: pointer; display:flex; align-items:center; justify-content:center; }
+  .add-btn{ background: var(--accent); color: #fff; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 22px; line-height: 1; cursor: pointer; display:flex; align-items:center; justify-content:center; box-shadow: 0 2px 6px rgba(0,0,0,0.15); flex-shrink: 0; }
+  .add-btn:active{ transform: scale(0.94); }
+
+  .tabs{ display:flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 12px; overflow-x:auto; }
+  .tab{ font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; padding: 8px 4px; background: none; border: none; color: var(--ink-soft); cursor: pointer; border-bottom: 2px solid transparent; margin-right: 14px; white-space:nowrap; }
+  .tab.active{ color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
+
+  .search-row{ margin-bottom: 10px; }
+  .search-row input{ width:100%; padding: 9px 12px; border: 1px solid var(--line); border-radius: 20px; background: var(--surface); font-family: var(--font-body); font-size: 13.5px; color: var(--ink); }
+
+  .chips{ display:flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+  .chip{ font-family: var(--font-mono); font-size: 10.5px; padding: 5px 10px; border-radius: 20px; border: 1px solid var(--line); background: var(--surface); color: var(--ink-soft); cursor: pointer; white-space:nowrap; }
+  .chip.active{ background: var(--ink); color: #fff; border-color: var(--ink); }
+  .chips-wrap{ overflow-x:auto; margin-bottom: 6px; }
+  .chips-wrap .chips{ flex-wrap: nowrap; margin-bottom: 0; }
+
+  .grid{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 12px; }
+  .card{ background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; cursor: pointer; position: relative; }
+  .card .photo{ width: 100%; aspect-ratio: 1; background: var(--accent-soft); display:flex; align-items:center; justify-content:center; overflow: hidden; }
+  .card .photo img{ width:100%; height:100%; object-fit: cover; display:block; }
+  .card .photo .placeholder{ font-family: var(--font-display); font-size: 34px; color: var(--accent); opacity: 0.5; }
+  .card .info{ padding: 8px 9px 10px; }
+  .card .name{ font-family: var(--font-display); font-size: 14px; font-weight: 600; line-height: 1.2; margin: 0 0 3px; }
+  .card .cat{ font-family: var(--font-mono); font-size: 9.5px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.04em; }
+  .tag{ position: absolute; top: 7px; right: 7px; font-family: var(--font-mono); font-size: 9px; padding: 2px 6px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .tag.calor{ background: var(--calor-bg); color: var(--calor); }
+  .tag.frio{ background: var(--frio-bg); color: var(--frio); }
+  .tag.ambos{ background: var(--ambos-bg); color: var(--ambos); }
+  .grp-tag{ position:absolute; top:7px; left:7px; font-family: var(--font-mono); font-size: 8.5px; padding: 2px 6px; border-radius: 20px; background: rgba(42,38,32,0.72); color:#fff; text-transform:uppercase; letter-spacing:0.03em; }
+
+  .archived-badge{ position:absolute; inset:0; background: rgba(42,38,32,0.55); color:#fff; display:flex; align-items:center; justify-content:center; font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; text-align:center; padding: 8px; }
+
+  .empty{ text-align:center; padding: 60px 20px; color: var(--ink-soft); font-family: var(--font-mono); font-size: 12.5px; line-height: 1.6; }
+  .empty .big{ font-family: var(--font-display); font-size: 20px; color: var(--ink); display:block; margin-bottom: 8px; }
+
+  /* Looks */
+  .look-card{ background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px; cursor:pointer; }
+  .look-thumbs{ display:grid; grid-template-columns: repeat(4,1fr); gap: 3px; margin-bottom: 8px; }
+  .look-thumbs .th{ aspect-ratio:1; background: var(--accent-soft); border-radius: 2px; overflow:hidden; display:flex; align-items:center; justify-content:center; }
+  .look-thumbs .th img{ width:100%; height:100%; object-fit:cover; }
+  .look-thumbs .th span{ font-family: var(--font-display); font-size: 14px; color: var(--accent); opacity:0.5; }
+  .look-name{ font-family: var(--font-display); font-size: 14px; font-weight:600; margin:0 0 2px; }
+  .look-count{ font-family: var(--font-mono); font-size: 9.5px; color: var(--ink-soft); text-transform:uppercase; }
+
+  .pick-grid{ display:grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-top: 10px; }
+  .pick-item{ position:relative; border: 2px solid var(--line); border-radius: var(--radius); overflow:hidden; cursor:pointer; }
+  .pick-item.selected{ border-color: var(--accent); }
+  .pick-item .photo{ aspect-ratio:1; background: var(--accent-soft); display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  .pick-item .photo img{ width:100%; height:100%; object-fit:cover; }
+  .pick-item .check{ position:absolute; top:4px; right:4px; width:18px; height:18px; border-radius:50%; background: rgba(255,255,255,0.85); border: 1px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:11px; }
+  .pick-item.selected .check{ background: var(--accent); color:#fff; border-color: var(--accent); }
+  .pick-item .pname{ font-family: var(--font-mono); font-size: 8.5px; padding: 3px 4px; color: var(--ink-soft); text-transform:uppercase; }
+
+  /* Modal */
+  .overlay{ position: fixed; inset: 0; background: rgba(42,38,32,0.5); display:flex; align-items:flex-end; justify-content:center; z-index: 50; }
+  .sheet{ background: var(--bg); width: 100%; max-width: 480px; max-height: 92vh; overflow-y: auto; border-radius: 14px 14px 0 0; padding: 18px 16px 28px; }
+  .sheet-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom: 14px; }
+  .sheet-head h2{ font-family: var(--font-display); font-size: 19px; margin:0; }
+  .close-btn{ background:none; border:none; font-size: 20px; color: var(--ink-soft); cursor:pointer; }
+  label{ display:block; font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); margin: 14px 0 6px; }
+  input[type=text], select, textarea{ width: 100%; padding: 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); font-family: var(--font-body); font-size: 14px; color: var(--ink); }
+  textarea{ resize: vertical; min-height: 60px; }
+  .photo-input{ display:flex; align-items:center; gap: 10px; }
+  .photo-preview{ width: 64px; height: 64px; border-radius: var(--radius); background: var(--accent-soft); overflow: hidden; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .photo-preview img{ width:100%; height:100%; object-fit:cover; }
+  .file-btn{ font-family: var(--font-mono); font-size: 11px; padding: 8px 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); cursor: pointer; }
+  .climate-row{ display:flex; gap: 6px; }
+  .climate-opt{ flex:1; text-align:center; padding: 9px 4px; border: 1px solid var(--line); border-radius: var(--radius); font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; cursor: pointer; background: var(--surface); }
+  .climate-opt.sel-calor{ background: var(--calor-bg); border-color: var(--calor); color: var(--calor); }
+  .climate-opt.sel-frio{ background: var(--frio-bg); border-color: var(--frio); color: var(--frio); }
+  .climate-opt.sel-ambos{ background: var(--ambos-bg); border-color: var(--ambos); color: var(--ambos); }
+
+  .actions{ display:flex; gap: 8px; margin-top: 20px; }
+  .btn{ flex:1; padding: 12px; border-radius: var(--radius); border: none; font-family: var(--font-mono); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; }
+  .btn-primary{ background: var(--accent); color: #fff; }
+  .btn-secondary{ background: var(--surface); border: 1px solid var(--line); color: var(--ink); }
+  .btn-danger{ background: var(--surface); border: 1px solid var(--danger); color: var(--danger); }
+  .btn-archive{ background: var(--ink); color: #fff; }
+
+  .status-msg{ font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-soft); text-align:center; padding: 30px 0; }
+
+  /* Stats */
+  .stat-block{ margin-bottom: 18px; }
+  .stat-title{ font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); margin-bottom: 8px; }
+  .stat-row{ display:flex; align-items:center; gap: 8px; margin-bottom: 6px; }
+  .stat-label{ font-family: var(--font-mono); font-size: 11px; width: 92px; flex-shrink:0; color: var(--ink); }
+  .stat-bar-wrap{ flex:1; background: var(--accent-soft); border-radius: 4px; height: 8px; overflow:hidden; }
+  .stat-bar{ background: var(--accent); height:100%; }
+  .stat-num{ font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft); width: 22px; text-align:right; flex-shrink:0; }
+  .stat-total{ font-family: var(--font-display); font-size: 30px; font-weight:600; margin: 0; }
+  .stat-total-label{ font-family: var(--font-mono); font-size: 10px; color: var(--ink-soft); text-transform:uppercase; letter-spacing:0.06em; }
+</style>
+
+<div class="app" id="app">
+  <div class="header">
+    <div>
+      <h1>Guarda-Roupa</h1>
+      <div class="sub" id="countLabel">carregando…</div>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" id="statsBtn" title="Estatísticas">▤</button>
+      <button class="icon-btn" id="importBtn" title="Importar backup">⇧</button>
+      <input type="file" id="importInput" accept="application/json" style="display:none">
+      <button class="icon-btn" id="backupBtn" title="Baixar backup">⇩</button>
+      <button class="add-btn" id="openAddBtn">+</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="ativo">Ativas</button>
+    <button class="tab" data-tab="arquivado">Desapegadas</button>
+    <button class="tab" data-tab="looks">Looks</button>
+  </div>
+
+  <div id="filterArea">
+    <div class="search-row"><input type="text" id="searchInput" placeholder="Buscar por nome..."></div>
+    <div class="chips-wrap"><div class="chips" id="groupChips"></div></div>
+    <div class="chips" id="climateChips">
+      <button class="chip active" data-climate="todos">Todos</button>
+      <button class="chip" data-climate="calor">Calor</button>
+      <button class="chip" data-climate="frio">Frio</button>
+      <button class="chip" data-climate="ambos">Ambos</button>
+    </div>
+  </div>
+
+  <div id="gridWrap"><div class="status-msg">carregando peças…</div></div>
+
+  <div style="text-align:center;font-family:var(--font-mono);font-size:9.5px;color:var(--ink-soft);margin-top:34px;line-height:1.6;">
+    Os dados ficam salvos neste navegador/dispositivo.<br>Use ⇩ para fazer backup e ⇧ para importar em outro aparelho.
+  </div>
+</div>
+
+<script>
+(function(){
+  const ITEMS_KEY = 'wardrobe:items';
+  const LOOKS_KEY = 'wardrobe:looks';
+  let items = [];
+  let looks = [];
+  let mainTab = 'ativo'; // ativo | arquivado | looks
+  let climateFilter = 'todos';
+  let groupFilter = 'todos';
+  let searchQuery = '';
+
+  const GROUP_CATEGORIES = {
+    'Top': ['Camiseta','Blusa','Regata','Body','Outro'],
+    'Bottom': ['Calça','Saia','Shorts','Outro'],
+    'Terceira Peça': ['Casaco','Jaqueta','Cardigã','Colete','Outro'],
+    'Peça Única': ['Vestido','Macacão','Outro'],
+    'Calçado': ['Sapato','Tênis','Bota','Sandália','Outro'],
+    'Acessório': ['Bolsa','Cinto','Chapéu','Joia','Outro']
+  };
+  const GROUPS = Object.keys(GROUP_CATEGORIES);
+  const MOTIVOS = ['Doado','Vendido','Descartado','Outro'];
+
+  const gridWrap = document.getElementById('gridWrap');
+  const countLabel = document.getElementById('countLabel');
+  const filterArea = document.getElementById('filterArea');
+  const searchInput = document.getElementById('searchInput');
+
+  document.getElementById('groupChips').innerHTML =
+    `<button class="chip active" data-group="todos">Todos</button>` +
+    GROUPS.map(g => `<button class="chip" data-group="${g}">${g}</button>`).join('');
+
+  // Armazenamento local do navegador (localStorage) — os dados ficam salvos
+  // neste dispositivo/navegador específico. Se o app futuramente usar um
+  // banco de dados (Supabase, Firebase etc.), troque só estas 4 funções.
+  async function loadAll(){
+    try{
+      const ri = localStorage.getItem(ITEMS_KEY);
+      const rl = localStorage.getItem(LOOKS_KEY);
+      items = ri ? JSON.parse(ri) : [];
+      looks = rl ? JSON.parse(rl) : [];
+    }catch(e){ items = []; looks = []; }
+    render();
+  }
+  async function saveItems(){
+    try{ localStorage.setItem(ITEMS_KEY, JSON.stringify(items)); }
+    catch(e){
+      console.error(e);
+      alert('Não foi possível salvar. O armazenamento do navegador pode estar cheio (fotos ocupam bastante espaço) — tente remover fotos grandes ou usar o backup para liberar espaço.');
+    }
+  }
+  async function saveLooks(){
+    try{ localStorage.setItem(LOOKS_KEY, JSON.stringify(looks)); }
+    catch(e){ console.error(e); alert('Não foi possível salvar o look.'); }
+  }
+
+  function uid(p){ return (p||'it') + '_' + Date.now() + '_' + Math.random().toString(36).slice(2,7); }
+  function escapeHtml(s){ const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+  function labelClima(c){ return c === 'calor' ? 'Calor' : c === 'frio' ? 'Frio' : 'Ambos'; }
+
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+      tab.classList.add('active');
+      mainTab = tab.dataset.tab;
+      filterArea.style.display = mainTab === 'looks' ? 'none' : '';
+      render();
+    });
+  });
+
+  document.getElementById('groupChips').addEventListener('click', (e) => {
+    const btn = e.target.closest('.chip'); if(!btn) return;
+    document.querySelectorAll('#groupChips .chip').forEach(c=>c.classList.remove('active'));
+    btn.classList.add('active');
+    groupFilter = btn.dataset.group;
+    render();
+  });
+  document.getElementById('climateChips').addEventListener('click', (e) => {
+    const btn = e.target.closest('.chip'); if(!btn) return;
+    document.querySelectorAll('#climateChips .chip').forEach(c=>c.classList.remove('active'));
+    btn.classList.add('active');
+    climateFilter = btn.dataset.climate;
+    render();
+  });
+  searchInput.addEventListener('input', () => { searchQuery = searchInput.value.trim().toLowerCase(); render(); });
+
+  function render(){
+    if(mainTab === 'looks'){ renderLooks(); return; }
+    renderItems();
+  }
+
+  function renderItems(){
+    const filtered = items.filter(it =>
+      it.status === mainTab &&
+      (climateFilter === 'todos' || it.clima === climateFilter) &&
+      (groupFilter === 'todos' || it.grupo === groupFilter) &&
+      (searchQuery === '' || it.nome.toLowerCase().includes(searchQuery))
+    );
+
+    countLabel.textContent = mainTab === 'ativo'
+      ? `${filtered.length} peça${filtered.length===1?'':'s'} ativa${filtered.length===1?'':'s'}`
+      : `${filtered.length} peça${filtered.length===1?'':'s'} desapegada${filtered.length===1?'':'s'}`;
+
+    if(filtered.length === 0){
+      gridWrap.innerHTML = `<div class="empty"><span class="big">${mainTab==='ativo' ? 'Nada por aqui ainda' : 'Nenhuma peça desapegada'}</span>${mainTab==='ativo' ? 'Toque em "+" para catalogar sua primeira peça.' : 'Peças que saírem do guarda-roupa aparecem aqui.'}</div>`;
+      return;
+    }
+
+    gridWrap.innerHTML = `<div class="grid">` + filtered.map(it => `
+      <div class="card" data-id="${it.id}">
+        <div class="photo">
+          ${it.foto ? `<img src="${it.foto}" alt="${escapeHtml(it.nome)}">` : `<span class="placeholder">${it.categoria ? it.categoria[0] : '?'}</span>`}
+          <span class="grp-tag">${it.grupo || ''}</span>
+          <span class="tag ${it.clima}">${labelClima(it.clima)}</span>
+          ${it.status === 'arquivado' ? `<div class="archived-badge">${it.motivoArquivo || 'Desapegada'}</div>` : ''}
+        </div>
+        <div class="info">
+          <p class="name">${escapeHtml(it.nome)}</p>
+          <div class="cat">${escapeHtml(it.categoria)}${it.anoAquisicao ? ' · desde ' + it.anoAquisicao : ''}</div>
+        </div>
+      </div>
+    `).join('') + `</div>`;
+
+    gridWrap.querySelectorAll('.card').forEach(card => {
+      card.addEventListener('click', () => openEdit(card.dataset.id));
+    });
+  }
+
+  function renderLooks(){
+    countLabel.textContent = `${looks.length} look${looks.length===1?'':'s'} salvo${looks.length===1?'':'s'}`;
+
+    const header = `<button class="btn btn-primary" id="newLookBtn" style="margin-bottom:14px;width:100%;">+ Criar look</button>`;
+
+    if(looks.length === 0){
+      gridWrap.innerHTML = header + `<div class="empty"><span class="big">Nenhum look ainda</span>Combine peças ativas do guarda-roupa e salve como um look.</div>`;
+      document.getElementById('newLookBtn').addEventListener('click', openLookCreate);
+      return;
+    }
+
+    gridWrap.innerHTML = header + `<div class="grid">` + looks.map(lk => {
+      const lkItems = lk.itemIds.map(id => items.find(i => i.id === id)).filter(Boolean);
+      const thumbs = lkItems.slice(0,4);
+      while(thumbs.length < 4) thumbs.push(null);
+      return `<div class="look-card" data-id="${lk.id}">
+        <div class="look-thumbs">
+          ${thumbs.map(it => it
+            ? `<div class="th">${it.foto ? `<img src="${it.foto}">` : `<span>${it.categoria ? it.categoria[0] : '?'}</span>`}</div>`
+            : `<div class="th"></div>`
+          ).join('')}
+        </div>
+        <p class="look-name">${escapeHtml(lk.nome)}</p>
+        <div class="look-count">${lkItems.length} peça${lkItems.length===1?'':'s'}</div>
+      </div>`;
+    }).join('') + `</div>`;
+
+    document.getElementById('newLookBtn').addEventListener('click', openLookCreate);
+    gridWrap.querySelectorAll('.look-card').forEach(card => {
+      card.addEventListener('click', () => openLookDetail(card.dataset.id));
+    });
+  }
+
+  function resizeImage(file){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = new Image();
+        img.onload = () => {
+          const maxW = 480;
+          const scale = Math.min(1, maxW / img.width);
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width * scale;
+          canvas.height = img.height * scale;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', 0.72));
+        };
+        img.onerror = reject;
+        img.src = e.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function openOverlay(innerHtml){
+    const overlay = document.createElement('div');
+    overlay.className = 'overlay';
+    overlay.innerHTML = `<div class="sheet">${innerHtml}</div>`;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', (e) => { if(e.target === overlay) overlay.remove(); });
+    return overlay;
+  }
+
+  document.getElementById('openAddBtn').addEventListener('click', () => openEdit(null));
+  document.getElementById('statsBtn').addEventListener('click', openStats);
+  document.getElementById('backupBtn').addEventListener('click', downloadBackup);
+  document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importInput').click());
+  document.getElementById('importInput').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if(!file) return;
+    try{
+      const text = await file.text();
+      const data = JSON.parse(text);
+      if(!data.items) throw new Error('formato inválido');
+      if(!confirm(`Importar ${data.items.length} peça(s) e ${data.looks ? data.looks.length : 0} look(s)? Isso substitui os dados atuais deste navegador.`)) return;
+      items = data.items || [];
+      looks = data.looks || [];
+      await saveItems();
+      await saveLooks();
+      render();
+      alert('Backup importado com sucesso.');
+    }catch(err){
+      alert('Não foi possível ler esse arquivo de backup.');
+    }
+    e.target.value = '';
+  });
+
+  function downloadBackup(){
+    const payload = { exportadoEm: new Date().toISOString(), items, looks };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const dataStr = new Date().toISOString().slice(0,10);
+    a.href = url;
+    a.download = `guarda-roupa-backup-${dataStr}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function openStats(){
+    const ativas = items.filter(i => i.status === 'ativo');
+    const arquivadas = items.filter(i => i.status === 'arquivado');
+    const total = ativas.length;
+
+    const grpCounts = GROUPS.map(g => ({ label: g, count: ativas.filter(i => i.grupo === g).length }));
+    const climaCounts = [
+      { label: 'Calor', count: ativas.filter(i => i.clima === 'calor').length },
+      { label: 'Frio', count: ativas.filter(i => i.clima === 'frio').length },
+      { label: 'Ambos', count: ativas.filter(i => i.clima === 'ambos').length }
+    ];
+    const maxGrp = Math.max(1, ...grpCounts.map(x=>x.count));
+    const maxClima = Math.max(1, ...climaCounts.map(x=>x.count));
+
+    const anoAtual = new Date().getFullYear();
+    const comAno = ativas.filter(i => i.anoAquisicao);
+    let longevidadeHtml = '';
+    if(comAno.length > 0){
+      const idades = comAno.map(i => anoAtual - i.anoAquisicao);
+      const media = (idades.reduce((a,b)=>a+b,0) / idades.length).toFixed(1);
+      const maisAntiga = comAno.reduce((a,b) => (anoAtual-a.anoAquisicao) >= (anoAtual-b.anoAquisicao) ? a : b);
+      const idadeMaisAntiga = anoAtual - maisAntiga.anoAquisicao;
+
+      const buckets = [
+        { label: '< 1 ano', count: idades.filter(i=>i<1).length },
+        { label: '1–3 anos', count: idades.filter(i=>i>=1 && i<=3).length },
+        { label: '3–5 anos', count: idades.filter(i=>i>3 && i<=5).length },
+        { label: '5+ anos', count: idades.filter(i=>i>5).length }
+      ];
+      const maxBucket = Math.max(1, ...buckets.map(x=>x.count));
+
+      longevidadeHtml = `
+        <div class="stat-block">
+          <div class="stat-title">Longevidade</div>
+          <div style="font-family:var(--font-mono);font-size:11px;color:var(--ink-soft);margin-bottom:10px;">
+            Média de ${media} anos por peça (${comAno.length} com ano informado) · mais antiga: ${escapeHtml(maisAntiga.nome)} (${idadeMaisAntiga} ano${idadeMaisAntiga===1?'':'s'})
+          </div>
+          ${bar(buckets, maxBucket)}
+        </div>`;
+    }
+
+    function bar(rows, max){
+      return rows.map(r => `
+        <div class="stat-row">
+          <div class="stat-label">${r.label}</div>
+          <div class="stat-bar-wrap"><div class="stat-bar" style="width:${r.count===0?0:Math.max(6,(r.count/max)*100)}%"></div></div>
+          <div class="stat-num">${r.count}</div>
+        </div>`).join('');
+    }
+
+    openOverlay(`
+      <div class="sheet-head"><h2>Estatísticas</h2><button class="close-btn" id="closeSheet">✕</button></div>
+      <p class="stat-total">${total}</p>
+      <div class="stat-total-label" style="margin-bottom:18px;">peças ativas · ${arquivadas.length} desapegadas · ${looks.length} looks</div>
+      <div class="stat-block"><div class="stat-title">Por categoria</div>${bar(grpCounts, maxGrp)}</div>
+      <div class="stat-block"><div class="stat-title">Por clima</div>${bar(climaCounts, maxClima)}</div>
+      ${longevidadeHtml}
+    `);
+    document.querySelector('.overlay #closeSheet').addEventListener('click', () => document.querySelector('.overlay').remove());
+  }
+
+  function openLookCreate(){
+    const active = items.filter(i => i.status === 'ativo');
+    let selected = new Set();
+
+    const overlay = openOverlay(`
+      <div class="sheet-head"><h2>Criar look</h2><button class="close-btn" id="closeSheet">✕</button></div>
+      <label>Nome do look</label>
+      <input type="text" id="lookNome" placeholder="Ex: Trabalho terça-feira">
+      <label>Escolha as peças (${active.length} disponíveis)</label>
+      ${active.length === 0 ? `<div class="status-msg">Cadastre peças ativas primeiro.</div>` : `<div class="pick-grid" id="pickGrid">` + active.map(it => `
+        <div class="pick-item" data-id="${it.id}">
+          <div class="photo">${it.foto ? `<img src="${it.foto}">` : ''}</div>
+          <div class="pname">${escapeHtml(it.nome)}</div>
+          <div class="check">✓</div>
+        </div>
+      `).join('') + `</div>`}
+      <div class="actions"><button class="btn btn-primary" id="saveLookBtn">Salvar look</button></div>
+    `);
+
+    overlay.querySelector('#closeSheet').addEventListener('click', () => overlay.remove());
+    const pickGrid = overlay.querySelector('#pickGrid');
+    if(pickGrid){
+      pickGrid.querySelectorAll('.pick-item').forEach(el => {
+        el.addEventListener('click', () => {
+          const id = el.dataset.id;
+          if(selected.has(id)){ selected.delete(id); el.classList.remove('selected'); }
+          else { selected.add(id); el.classList.add('selected'); }
+        });
+      });
+    }
+    overlay.querySelector('#saveLookBtn').addEventListener('click', async () => {
+      const nome = overlay.querySelector('#lookNome').value.trim();
+      if(!nome){ alert('Dá um nome pro look.'); return; }
+      if(selected.size === 0){ alert('Escolhe pelo menos uma peça.'); return; }
+      looks.push({ id: uid('lk'), nome, itemIds: Array.from(selected), criadoEm: new Date().toISOString() });
+      await saveLooks();
+      overlay.remove();
+      render();
+    });
+  }
+
+  function openLookDetail(id){
+    const lk = looks.find(l => l.id === id);
+    if(!lk) return;
+    const lkItems = lk.itemIds.map(iid => items.find(i => i.id === iid)).filter(Boolean);
+
+    const overlay = openOverlay(`
+      <div class="sheet-head"><h2>${escapeHtml(lk.nome)}</h2><button class="close-btn" id="closeSheet">✕</button></div>
+      <div class="grid">${lkItems.map(it => `
+        <div class="card" style="cursor:default;">
+          <div class="photo">
+            ${it.foto ? `<img src="${it.foto}">` : `<span class="placeholder">${it.categoria ? it.categoria[0] : '?'}</span>`}
+            <span class="grp-tag">${it.grupo || ''}</span>
+          </div>
+          <div class="info"><p class="name">${escapeHtml(it.nome)}</p><div class="cat">${escapeHtml(it.categoria)}</div></div>
+        </div>
+      `).join('')}</div>
+      <div class="actions"><button class="btn btn-danger" id="delLookBtn">Excluir look</button></div>
+    `);
+    overlay.querySelector('#closeSheet').addEventListener('click', () => overlay.remove());
+    overlay.querySelector('#delLookBtn').addEventListener('click', async () => {
+      if(!confirm('Excluir esse look?')) return;
+      looks = looks.filter(l => l.id !== lk.id);
+      await saveLooks();
+      overlay.remove();
+      render();
+    });
+  }
+
+  function openEdit(id){
+    const existing = id ? items.find(i => i.id === id) : null;
+    let selectedGrupo = existing ? existing.grupo : GROUPS[0];
+    let selectedClima = existing ? existing.clima : null;
+    let photoData = existing ? (existing.foto || null) : null;
+
+    function categoriaOptions(grupo, current){
+      return (GROUP_CATEGORIES[grupo]||[]).map(c => `<option ${current===c?'selected':''}>${c}</option>`).join('');
+    }
+
+    const overlay = openOverlay(`
+      <div class="sheet-head"><h2>${existing ? 'Editar peça' : 'Nova peça'}</h2><button class="close-btn" id="closeSheet">✕</button></div>
+
+      <label>Foto</label>
+      <div class="photo-input">
+        <div class="photo-preview" id="photoPreview">${existing && existing.foto ? `<img src="${existing.foto}">` : ''}</div>
+        <label class="file-btn" for="fileInput">Escolher foto</label>
+        <input type="file" id="fileInput" accept="image/*" style="display:none">
+      </div>
+
+      <label>Nome da peça</label>
+      <input type="text" id="fNome" placeholder="Ex: Camisa de linho azul" value="${existing ? escapeHtml(existing.nome) : ''}">
+
+      <label>Categoria</label>
+      <select id="fGrupo">${GROUPS.map(g => `<option ${selectedGrupo===g?'selected':''}>${g}</option>`).join('')}</select>
+
+      <label>Subcategoria</label>
+      <select id="fCategoria">${categoriaOptions(selectedGrupo, existing ? existing.categoria : null)}</select>
+
+      <label>Ano de aquisição (opcional)</label>
+      <input type="text" inputmode="numeric" id="fAno" placeholder="Ex: 2022" maxlength="4" value="${existing && existing.anoAquisicao ? existing.anoAquisicao : ''}">
+
+      <label>Clima</label>
+      <div class="climate-row" id="climateRow">
+        <div class="climate-opt" data-val="calor">Calor</div>
+        <div class="climate-opt" data-val="frio">Frio</div>
+        <div class="climate-opt" data-val="ambos">Ambos</div>
+      </div>
+
+      <label>Notas (opcional)</label>
+      <textarea id="fNotas" placeholder="Tecido, ocasião, onde comprou...">${existing ? escapeHtml(existing.notas||'') : ''}</textarea>
+
+      ${existing && existing.status === 'arquivado' ? `
+        <label>Motivo do desapego</label>
+        <select id="fMotivo">${MOTIVOS.map(m => `<option ${existing.motivoArquivo===m?'selected':''}>${m}</option>`).join('')}</select>
+      ` : ''}
+
+      <div class="actions"><button class="btn btn-primary" id="saveBtn">Salvar</button></div>
+      ${existing ? `<div class="actions">
+        ${existing.status === 'ativo'
+          ? `<button class="btn btn-archive" id="archiveBtn">Marcar como desapego</button>`
+          : `<button class="btn btn-secondary" id="restoreBtn">Voltar ao guarda-roupa</button>`}
+        <button class="btn btn-danger" id="deleteBtn">Excluir</button>
+      </div>` : ''}
+    `);
+
+    function refreshClimateUI(){
+      overlay.querySelectorAll('.climate-opt').forEach(opt => {
+        opt.classList.remove('sel-calor','sel-frio','sel-ambos');
+        if(opt.dataset.val === selectedClima) opt.classList.add('sel-' + selectedClima);
+      });
+    }
+    refreshClimateUI();
+
+    overlay.querySelectorAll('.climate-opt').forEach(opt => {
+      opt.addEventListener('click', () => { selectedClima = opt.dataset.val; refreshClimateUI(); });
+    });
+
+    overlay.querySelector('#closeSheet').addEventListener('click', () => overlay.remove());
+
+    overlay.querySelector('#fGrupo').addEventListener('change', (e) => {
+      selectedGrupo = e.target.value;
+      overlay.querySelector('#fCategoria').innerHTML = categoriaOptions(selectedGrupo, null);
+    });
+
+    overlay.querySelector('#fileInput').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if(!file) return;
+      try{
+        photoData = await resizeImage(file);
+        overlay.querySelector('#photoPreview').innerHTML = `<img src="${photoData}">`;
+      }catch(err){ alert('Não foi possível processar essa imagem.'); }
+    });
+
+    overlay.querySelector('#saveBtn').addEventListener('click', async () => {
+      const nome = overlay.querySelector('#fNome').value.trim();
+      const grupo = overlay.querySelector('#fGrupo').value;
+      const categoria = overlay.querySelector('#fCategoria').value;
+      const notas = overlay.querySelector('#fNotas').value.trim();
+      const anoRaw = overlay.querySelector('#fAno').value.trim();
+      const anoAtual = new Date().getFullYear();
+      let anoAquisicao = null;
+      if(anoRaw){
+        const anoNum = parseInt(anoRaw, 10);
+        if(isNaN(anoNum) || anoNum < 1950 || anoNum > anoAtual){
+          alert('Digita um ano válido (entre 1950 e ' + anoAtual + ').'); return;
+        }
+        anoAquisicao = anoNum;
+      }
+
+      if(!nome){ alert('Dá um nome pra peça.'); return; }
+      if(!selectedClima){ alert('Escolhe o clima da peça.'); return; }
+
+      if(existing){
+        existing.nome = nome; existing.grupo = grupo; existing.categoria = categoria;
+        existing.clima = selectedClima; existing.notas = notas; existing.foto = photoData;
+        existing.anoAquisicao = anoAquisicao;
+        const motivoEl = overlay.querySelector('#fMotivo');
+        if(motivoEl) existing.motivoArquivo = motivoEl.value;
+      } else {
+        items.push({
+          id: uid('it'), nome, grupo, categoria, notas, clima: selectedClima, foto: photoData,
+          anoAquisicao, status: 'ativo', motivoArquivo: null, criadoEm: new Date().toISOString()
+        });
+      }
+      await saveItems();
+      overlay.remove();
+      render();
+    });
+
+    const archiveBtn = overlay.querySelector('#archiveBtn');
+    if(archiveBtn){
+      archiveBtn.addEventListener('click', async () => {
+        const motivo = prompt('Motivo do desapego (ex: Doado, Vendido, Descartado):', 'Doado');
+        if(motivo === null) return;
+        existing.status = 'arquivado'; existing.motivoArquivo = motivo || 'Outro';
+        await saveItems(); overlay.remove(); render();
+      });
+    }
+    const restoreBtn = overlay.querySelector('#restoreBtn');
+    if(restoreBtn){
+      restoreBtn.addEventListener('click', async () => {
+        existing.status = 'ativo'; existing.motivoArquivo = null;
+        await saveItems(); overlay.remove(); render();
+      });
+    }
+    const deleteBtn = overlay.querySelector('#deleteBtn');
+    if(deleteBtn){
+      deleteBtn.addEventListener('click', async () => {
+        if(!confirm('Excluir essa peça permanentemente?')) return;
+        items = items.filter(i => i.id !== existing.id);
+        looks.forEach(lk => { lk.itemIds = lk.itemIds.filter(iid => iid !== existing.id); });
+        await saveItems(); await saveLooks();
+        overlay.remove(); render();
+      });
+    }
+  }
+
+  loadAll();
+})();
+</script>
