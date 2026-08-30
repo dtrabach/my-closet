@@ -191,27 +191,75 @@
     `<button class="chip active" data-group="todos">Todos</button>` +
     GROUPS.map(g => `<button class="chip" data-group="${g}">${g}</button>`).join('');
 
-  // Armazenamento local do navegador (localStorage) — os dados ficam salvos
-  // neste dispositivo/navegador específico. Se o app futuramente usar um
-  // banco de dados (Supabase, Firebase etc.), troque só estas 4 funções.
+  // Armazenamento local do navegador via IndexedDB — aguenta muito mais
+  // espaço que localStorage (importante porque fotos em base64 são pesadas).
+  // Os dados continuam presos a este navegador/dispositivo específico.
+  const DB_NAME = 'wardrobe-db';
+  const STORE_NAME = 'kv';
+
+  function openDB(){
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(DB_NAME, 1);
+      req.onupgradeneeded = () => {
+        req.result.createObjectStore(STORE_NAME);
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+  async function idbGet(key){
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const req = tx.objectStore(STORE_NAME).get(key);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+  async function idbSet(key, value){
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      tx.objectStore(STORE_NAME).put(value, key);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
   async function loadAll(){
     try{
-      const ri = localStorage.getItem(ITEMS_KEY);
-      const rl = localStorage.getItem(LOOKS_KEY);
-      items = ri ? JSON.parse(ri) : [];
-      looks = rl ? JSON.parse(rl) : [];
-    }catch(e){ items = []; looks = []; }
+      let storedItems = await idbGet(ITEMS_KEY);
+      let storedLooks = await idbGet(LOOKS_KEY);
+
+      // Migração automática: se havia dados salvos no localStorage (versão
+      // antiga) e o IndexedDB ainda está vazio, importa uma vez e limpa.
+      if(storedItems === undefined){
+        const legacyItems = localStorage.getItem(ITEMS_KEY);
+        const legacyLooks = localStorage.getItem(LOOKS_KEY);
+        if(legacyItems){
+          storedItems = JSON.parse(legacyItems);
+          storedLooks = legacyLooks ? JSON.parse(legacyLooks) : [];
+          await idbSet(ITEMS_KEY, storedItems);
+          await idbSet(LOOKS_KEY, storedLooks);
+          localStorage.removeItem(ITEMS_KEY);
+          localStorage.removeItem(LOOKS_KEY);
+        }
+      }
+
+      items = storedItems || [];
+      looks = storedLooks || [];
+    }catch(e){ console.error(e); items = []; looks = []; }
     render();
   }
   async function saveItems(){
-    try{ localStorage.setItem(ITEMS_KEY, JSON.stringify(items)); }
+    try{ await idbSet(ITEMS_KEY, items); }
     catch(e){
       console.error(e);
-      alert('Não foi possível salvar. O armazenamento do navegador pode estar cheio (fotos ocupam bastante espaço) — tente remover fotos grandes ou usar o backup para liberar espaço.');
+      alert('Não foi possível salvar. Tente novamente ou use o backup para liberar espaço.');
     }
   }
   async function saveLooks(){
-    try{ localStorage.setItem(LOOKS_KEY, JSON.stringify(looks)); }
+    try{ await idbSet(LOOKS_KEY, looks); }
     catch(e){ console.error(e); alert('Não foi possível salvar o look.'); }
   }
 
@@ -326,14 +374,14 @@
       reader.onload = e => {
         const img = new Image();
         img.onload = () => {
-          const maxW = 480;
+          const maxW = 400;
           const scale = Math.min(1, maxW / img.width);
           const canvas = document.createElement('canvas');
           canvas.width = img.width * scale;
           canvas.height = img.height * scale;
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          resolve(canvas.toDataURL('image/jpeg', 0.72));
+          resolve(canvas.toDataURL('image/jpeg', 0.65));
         };
         img.onerror = reject;
         img.src = e.target.result;
